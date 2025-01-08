@@ -1,4 +1,4 @@
-module canchitas-libres-field
+module canchitas-libres-user
 
 go 1.22
 
