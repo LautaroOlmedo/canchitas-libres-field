@@ -5,9 +5,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strconv"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/lib/pq"
-	"strconv"
 )
 
 var (

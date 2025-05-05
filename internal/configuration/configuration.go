@@ -2,8 +2,9 @@ package configuration
 
 import (
 	"fmt"
-	"github.com/joho/godotenv"
 	"os"
+
+	"github.com/joho/godotenv"
 )
 
 type Server struct {
@@ -18,6 +19,7 @@ type Database struct {
 	DB_PASSWORD string
 	DB_NAME     string
 }
+
 type Configuration struct {
 	SERVER   Server   `yaml:"SERVER"`
 	DATABASE Database `yaml:"DATABASE"`
