@@ -6,20 +6,139 @@ import (
 	"fmt"
 )
 
-func (s *Postgres) GetAll() ([]domain.Field, error) {
-	return []domain.Field{}, nil
+const (
+	queryInsertField = `
+		INSERT INTO fields (name, type, price, status)
+		VALUES ($1, $2, $3, $4)
+		RETURNING id;`
+
+	querySelectAllFields = `
+		SELECT 
+			id,
+			name,
+			type,
+			price,
+			status
+		FROM 
+			fields;`
+
+	querySelectFieldByID = `
+		SELECT 
+			id,
+			name,
+			type,
+			price,
+			status
+		FROM 
+			fields
+		WHERE id = $1;`
+
+	queryUpdateFieldName = `UPDATE fields SET name = $1 WHERE id = $2;`
+	queryUpdateFieldType = `UPDATE fields SET type = $1 WHERE id = $2;`
+	queryUpdateFieldPrice = `UPDATE fields SET price = $1 WHERE id = $2;`
+	queryUpdateFieldStatus = `UPDATE fields SET status = $1 WHERE id = $2;`
+
+	queryDeleteField = `DELETE FROM fields WHERE id = $1;`
+)
+
+func (p *Postgres) GetAll() ([]domain.Field, error) {
+	var fields []domain.Field
+	err := p.DB.Select(&fields, querySelectAllFields)
+	if err != nil {
+		return nil, err
+	}
+
+	return fields, nil
 }
 
-func (s *Postgres) Add(ctx context.Context, field domain.Field) error {
-	fmt.Println("in infrastructure layer we have a field whit name: ", field.Name)
+func (p *Postgres) Add(ctx context.Context, field domain.Field) error {
+	fmt.Println("in infrastructure layer we have a field with name: ", field.Name)
+	tx, err := p.Begin()
+	if err != nil {
+		return err
+	}
+	var fieldID int
+	err = tx.QueryRowContext(ctx, queryInsertField, field.Name, field.Type, field.Price, field.Status).Scan(&fieldID)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to insert field: %w", err)
+	}
 
+	err = tx.Commit()
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
-func (s *Postgres) GetByID(id int) (domain.Field, error) {
-	return domain.Field{}, nil
+func (p *Postgres) GetByID(id int) (domain.Field, error) {
+	var field domain.Field
+
+	err := p.Get(&field, querySelectFieldByID, id)
+
+	if err != nil {
+		return domain.Field{}, fmt.Errorf("failed to get user by ID %d: %w", id, err)
+	}
+	return field, nil
 }
 
-func (s *Postgres) Delete(ctx context.Context, id string) error {
+func (p *Postgres) Delete(ctx context.Context, id int) error {
+	tx, err := p.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	_, err = tx.ExecContext(ctx, queryDeleteField, id)
+	if err != nil {
+		tx.Rollback()
+		return fmt.Errorf("failed to delete field: %w", err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
+	return nil
+}
+func (p *Postgres) Update(ctx context.Context,id int, fieldU domain.Field) error {
+	currentField, err := p.GetByID(id)
+	if err != nil {
+		return fmt.Errorf("field not found: %w", err)
+	}
+	
+	tx, err := p.Begin()
+	if err != nil {
+		return err
+	}
+	if fieldU.Name != ""{
+		_, err = tx.ExecContext(ctx, queryUpdateFieldName,fieldU.Name,id )
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to update field name: %w", err)
+		}
+	}
+	if fieldU.Type != ""{
+		_, err = tx.ExecContext(ctx, queryUpdateFieldType,fieldU.Type,id )
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to update field type: %w", err)
+		}
+	}
+	if fieldU.Price != 0{
+		_, err = tx.ExecContext(ctx, queryUpdateFieldPrice,fieldU.Price,id )
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to update field price: %w", err)
+		}
+	}
+	if fieldU.Status != currentField.Status {
+		_, err = tx.ExecContext(ctx, queryUpdateFieldName,fieldU.Name,id )
+		if err != nil {
+			tx.Rollback()
+			return fmt.Errorf("failed to update field name: %w", err)
+		}
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("failed to commit transaction: %w", err)
+	}
 	return nil
 }

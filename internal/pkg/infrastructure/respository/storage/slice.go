@@ -20,6 +20,17 @@ func (s *Slice) GetByID(id int) (domain.Field, error) {
 	return s.SliceArr[id], nil
 }
 
-func (s *Slice) Delete(ctx context.Context, id string) error {
+func (s *Slice) Delete(ctx context.Context, id int) error {
 	return nil
 }
+
+func (s *Slice) Update(ctx context.Context, id int, fieldU domain.Field) error {
+	
+	return nil 
+}                
+
+
+
+
+
+

@@ -17,7 +17,7 @@ func NewServer(configuration *configuration.Configuration, handler *Handler) (*S
 		config:  configuration,
 		handler: handler,
 	}, nil
-}
+}                                                                    
 
 func (s *Server) Start() {
 	mux := http.NewServeMux()

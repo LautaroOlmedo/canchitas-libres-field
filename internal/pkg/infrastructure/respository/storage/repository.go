@@ -2,7 +2,7 @@ package storage
 
 import (
 	"canchitas-libres-field/internal/configuration"
-	"canchitas-libres-field/internal/pkg/domain"
+	domain "canchitas-libres-field/internal/pkg/domain"
 
 	"github.com/jmoiron/sqlx"
 )
