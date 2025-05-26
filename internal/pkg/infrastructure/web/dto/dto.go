@@ -32,12 +32,9 @@ func ValidateFieldCreateDto(name string, fieldType string, price float64) error 
 }
 
 // ValidateInputId valida que el ID sea válido
-func ValidateInputId(id int) error {
-	if id == 0 {
+func ValidateInputId(id string) error {
+	if id == "" {
 		return ErrMissingParameter
-	}
-	if reflect.TypeOf(id) != reflect.TypeOf(1) {
-		return ErrInvalidTypeVariable
 	}
 	return nil
 }

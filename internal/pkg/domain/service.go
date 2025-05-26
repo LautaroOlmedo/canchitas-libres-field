@@ -7,10 +7,11 @@ import (
 
 type StorageRepository interface {
 	GetAll() ([]Field, error)
-	GetByID(id int) (Field, error)
+	GetByID(id string) (Field, error)
 	Add(ctx context.Context, field Field) error
-	Delete(ctx context.Context, id int) error
-	Update(ctx context.Context, id int, fieldU Field) error
+	Delete(ctx context.Context, id string) error
+	Update(ctx context.Context, id string, fieldU Field) error
+	GetByType(fieldType string) (Field, error)
 }
 
 type Service struct {

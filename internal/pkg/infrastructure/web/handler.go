@@ -8,16 +8,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
 type Service interface {
 	GetAll() ([]domain.Field, error)
-	GetByID(id int) (domain.Field, error)
+	GetByID(id string) (domain.Field, error)
 	Add(field domain.Field) error
-	Delete(id int) error
-	Update(id int, field domain.Field) error
+	Delete(id string) error
+	Update(id string, field domain.Field) error
+	GetByType(typeF string) (domain.Field, error)
 }
 
 type Handler struct {
@@ -33,7 +33,8 @@ func NewHandler(service Service) *Handler {
 var (
 	getAllRe = regexp.MustCompile(`^\/field\/?$`)
 	getOneRe = regexp.MustCompile(`^\/field\/(\d+)$`)
-	createRe = regexp.MustCompile(`^\/user\/?$`)
+	createRe = regexp.MustCompile(`^\/field\/?$`)
+	getByTypeRe = regexp.MustCompile(`^\/field\/type\/([a-zA-Z0-9\-]+)$`)
 
 )
 
@@ -47,7 +48,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		h.GetFieldByID(w, r)
 		return
-	case r.Method == http.MethodPost:
+	case r.Method == http.MethodPost && createRe.MatchString(r.URL.Path):
 		w.Header().Set("Content-Type", "application/json")
 		h.CreateField(w, r)
 		return
@@ -56,6 +57,10 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	case r.Method == http.MethodPut:
 		h.UpdateField(w, r)
+		return
+	case r.Method == http.MethodGet && getByTypeRe.MatchString(r.URL.Path):
+		w.Header().Set("Content-Type", "application/json")
+		h.GetByType(w, r)
 		return
 		
 	default:
@@ -88,15 +93,11 @@ func (handler *Handler) GetAllFields(w http.ResponseWriter, r *http.Request) {
 func (handler *Handler) GetFieldByID(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	parts := strings.Split(path, "/")
-	idString := parts[len(parts)-1]
+	id := parts[len(parts)-1]
 
-	id, err := strconv.Atoi(idString)
-	if err != nil {
-		http.Error(w, "invalid id format", http.StatusBadRequest)
-		return
-	}
+	
 
-	err = dto.ValidateInputId(id)
+	err := dto.ValidateInputId(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -160,15 +161,9 @@ func (handler *Handler) CreateField(w http.ResponseWriter, r *http.Request) {
 func (handler *Handler) UpdateField(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	parts := strings.Split(path, "/")
-	idString := parts[len(parts)-1]
+	id := parts[len(parts)-1]
 
-	id, err := strconv.Atoi(idString)
-	if err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return
-	}
-
-	err = dto.ValidateInputId(id)
+	err := dto.ValidateInputId(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -213,15 +208,9 @@ func (handler *Handler) UpdateField(w http.ResponseWriter, r *http.Request) {
 func (handler *Handler) DeleteField(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	parts := strings.Split(path, "/")
-	idString := parts[len(parts)-1]
+	id := parts[len(parts)-1] 
 
-	id, err := strconv.Atoi(idString)
-	if err != nil {
-		http.Error(w, "invalid id", http.StatusBadRequest)
-		return
-	}
-
-	err = dto.ValidateInputId(id)
+	err := dto.ValidateInputId(id) 
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -235,4 +224,34 @@ func (handler *Handler) DeleteField(w http.ResponseWriter, r *http.Request) {
 
 	w.WriteHeader(http.StatusOK)
 	w.Write([]byte("field was eliminated"))
+}
+
+func (handler *Handler) GetByType(w http.ResponseWriter, r *http.Request) {
+	path := strings.TrimPrefix(r.URL.Path, "/")
+	parts := strings.Split(path, "/")
+	if len(parts) < 3 {
+		http.Error(w, "Missing type parameter", http.StatusBadRequest)
+		return
+	}
+	typeF := parts[len(parts)-1]
+
+	if typeF == "" {
+		http.Error(w, "Invalid field type", http.StatusBadRequest)
+		return
+	}
+
+	field, err := handler.Service.GetByType(typeF)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	fieldJSON, err := json.Marshal(field)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	_, _ = w.Write(fieldJSON)
 }

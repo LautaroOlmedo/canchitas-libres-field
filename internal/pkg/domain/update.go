@@ -6,7 +6,7 @@ import (
 	"strings"
 )
 
-func (s *Service) Update(id int, fieldU Field) error {
+func (s *Service) Update(id string, fieldU Field) error {
 	var errIDNotFound = errors.New("ID not found")
 
 	fieldU.Name = strings.TrimSpace(fieldU.Name)

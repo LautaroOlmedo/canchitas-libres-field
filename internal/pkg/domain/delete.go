@@ -5,11 +5,11 @@ import (
 	"fmt"
 )
 
-func (s *Service) Delete(id int) error {
+func (s *Service) Delete(id string) error {
 	var ctx context.Context
 	err := s.StorageRepository.Delete(ctx, id)
 	if err != nil {
 		return err
 	}
-	return fmt.Errorf("element with ID %d not found", id)
+	return fmt.Errorf("element with ID %s not found", id)
 }
