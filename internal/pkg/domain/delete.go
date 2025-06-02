@@ -6,10 +6,16 @@ import (
 )
 
 func (s *Service) Delete(id string) error {
-	var ctx context.Context
-	err := s.StorageRepository.Delete(ctx, id)
+	fields, err := s.StorageRepository.GetAll()
 	if err != nil {
 		return err
 	}
+
+	for i := range fields {
+		if fields[i].ID == id {
+			return s.StorageRepository.Delete(context.Background(), id)
+		}
+	}
+
 	return fmt.Errorf("element with ID %s not found", id)
 }
