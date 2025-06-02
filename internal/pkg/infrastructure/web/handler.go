@@ -5,8 +5,10 @@ import (
 	"canchitas-libres-field/internal/pkg/infrastructure/web/dto"
 	"canchitas-libres-field/internal/pkg/infrastructure/web/mapper"
 	"encoding/json"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"regexp"
 	"strings"
 )
@@ -17,7 +19,7 @@ type Service interface {
 	Add(field domain.Field) error
 	Delete(id string) error
 	Update(id string, field domain.Field) error
-	GetByType(typeF string) (domain.Field, error)
+	GetByType(typeF string) ([]domain.Field, error)
 }
 
 type Handler struct {
@@ -31,11 +33,10 @@ func NewHandler(service Service) *Handler {
 }
 
 var (
-	getAllRe = regexp.MustCompile(`^\/field\/?$`)
-	getOneRe = regexp.MustCompile(`^\/field\/(\d+)$`)
-	createRe = regexp.MustCompile(`^\/field\/?$`)
-	getByTypeRe = regexp.MustCompile(`^\/field\/type\/([a-zA-Z0-9\-]+)$`)
-
+	getAllRe    = regexp.MustCompile(`^\/field\/?$`)
+	getOneRe    = regexp.MustCompile(`^\/field\/([a-fA-F0-9-]{36})$`)
+	createRe    = regexp.MustCompile(`^\/field\/?$`)
+	getByTypeRe = regexp.MustCompile(`^\/field\/type\/([^\/]+)$`)
 )
 
 func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
@@ -62,7 +63,7 @@ func (h *Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 		h.GetByType(w, r)
 		return
-		
+
 	default:
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusNotFound)
@@ -76,7 +77,7 @@ func (handler *Handler) GetAllFields(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 	}
-	fieldsJSON, jsonErr := json.Marshal(fields) //lo transforma de codigo json a uno legible para el lenguaje 
+	fieldsJSON, jsonErr := json.Marshal(fields) //lo transforma de codigo json a uno legible para el lenguaje
 	if jsonErr != nil {
 		return
 	}
@@ -94,8 +95,6 @@ func (handler *Handler) GetFieldByID(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	parts := strings.Split(path, "/")
 	id := parts[len(parts)-1]
-
-	
 
 	err := dto.ValidateInputId(id)
 	if err != nil {
@@ -208,9 +207,9 @@ func (handler *Handler) UpdateField(w http.ResponseWriter, r *http.Request) {
 func (handler *Handler) DeleteField(w http.ResponseWriter, r *http.Request) {
 	path := strings.TrimPrefix(r.URL.Path, "/")
 	parts := strings.Split(path, "/")
-	id := parts[len(parts)-1] 
+	id := parts[len(parts)-1]
 
-	err := dto.ValidateInputId(id) 
+	err := dto.ValidateInputId(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
@@ -233,25 +232,31 @@ func (handler *Handler) GetByType(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, "Missing type parameter", http.StatusBadRequest)
 		return
 	}
-	typeF := parts[len(parts)-1]
-
+	typeValue := parts[len(parts)-1]
+	typeF, err := url.PathUnescape(typeValue)
+	if err != nil {
+		fmt.Println(err)
+		w.WriteHeader(http.StatusBadRequest)
+		return
+	}
+	fmt.Println(typeF)
 	if typeF == "" {
 		http.Error(w, "Invalid field type", http.StatusBadRequest)
 		return
 	}
 
-	field, err := handler.Service.GetByType(typeF)
+	fields, err := handler.Service.GetByType(typeF)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
-	fieldJSON, err := json.Marshal(field)
+	fieldsJSON, err := json.Marshal(fields)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write(fieldJSON)
+	_, _ = w.Write(fieldsJSON)
 }

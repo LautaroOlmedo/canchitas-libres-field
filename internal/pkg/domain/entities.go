@@ -1,7 +1,7 @@
 package domain
 
 type Field struct {
-	ID     string  `json:"id" db:"field_id"`
+	ID     string  `json:"id" db:"id"`
 	Type   string  `json:"type" db:"type"`
 	Price  float64 `json:"price" db:"price"`
 	Name   string  `json:"name" db:"name"`

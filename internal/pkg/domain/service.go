@@ -11,7 +11,7 @@ type StorageRepository interface {
 	Add(ctx context.Context, field Field) error
 	Delete(ctx context.Context, id string) error
 	Update(ctx context.Context, id string, fieldU Field) error
-	GetByType(fieldType string) (Field, error)
+	GetByType(fieldType string) ([]Field, error)
 }
 
 type Service struct {

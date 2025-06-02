@@ -12,20 +12,18 @@ var (
 )
 
 type FieldDto struct {
-	Name  string  `json:"name"`
-	Type  string  `json:"type"`
-	Price float64 `json:"price"`
-	Status bool   `json:"status"`
+	Name   string  `json:"name"`
+	Type   string  `json:"type"`
+	Price  float64 `json:"price"`
+	Status bool    `json:"status"`
 }
-
-
 
 // ValidateFieldCreateDto valida los campos obligatorios del DTO
 func ValidateFieldCreateDto(name string, fieldType string, price float64) error {
 	if strings.TrimSpace(name) == "" || strings.TrimSpace(fieldType) == "" || price <= 0 {
 		return ErrMissingParameter
 	}
-	if reflect.TypeOf(name) != reflect.TypeOf("") || reflect.TypeOf(price) != reflect.TypeOf(0) || reflect.TypeOf(fieldType) != reflect.TypeOf("") {
+	if reflect.TypeOf(name) != reflect.TypeOf("") || reflect.TypeOf(price) != reflect.TypeOf(3.14) || reflect.TypeOf(fieldType) != reflect.TypeOf("") {
 		return ErrInvalidTypeVariable
 	}
 	return nil
