@@ -19,7 +19,6 @@ func (s *Service) Add(field Field) error {
 		return ErrMissingFieldParameter
 	}
 
-	
 	if r != "futbol 5" && r != "futbol 7" && r != "futbol 11" {
 		return ErrInvalidFieldType
 	}
@@ -31,6 +30,7 @@ func (s *Service) Add(field Field) error {
 		return ErrInvalidPrice
 	}
 
-	return s.StorageRepository.Add(context.Background(), field)
+	field.Status = true
 
+	return s.StorageRepository.Add(context.Background(), field)
 }
