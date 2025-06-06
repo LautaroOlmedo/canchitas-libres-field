@@ -1,5 +1,14 @@
 -- CREATE DATABASE IF NOT EXISTS peya
-SELECT 'CREATE DATABASE fieldDB'
-    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'fieldDB')\gexec
+--SELECT 'CREATE DATABASE fieldDB'
+--    WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'fieldDB')\gexec
 
+CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+
+CREATE TABLE fields (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    type VARCHAR(50) NOT NULL,
+    price DOUBLE PRECISION NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    status BOOLEAN NOT NULL
+);
 
